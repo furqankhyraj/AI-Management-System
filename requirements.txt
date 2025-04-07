@@ -1,0 +1,6 @@
+Django
+python-dotenv
+openai
+requests
+django-background-tasks
+gunicorn
