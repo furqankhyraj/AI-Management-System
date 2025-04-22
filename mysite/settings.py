@@ -28,10 +28,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'muhammad.mehdi@douzetech.com'  # Generic HR or system email
 EMAIL_HOST_PASSWORD = 'Karachi@123'
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 TRELLO_API_KEY = os.getenv("TRELLO_API_KEY")
 TRELLO_API_TOKEN = os.getenv("TRELLO_API_TOKEN")
 TRELLO_BOARD_ID = os.getenv("TRELLO_BOARD_ID")
+TRELLO_API_URL = 'https://api.trello.com/1'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -45,8 +46,10 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    "0394-103-196-160-130.ngrok-free.app"  # Add your current Ngrok URL
+    "34b3-202-59-12-195.ngrok-free.app"  # Add your current Ngrok URL
 ]
+
+
 
 
 # settings.py
@@ -142,7 +145,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Karachi'
 
 USE_I18N = True
 

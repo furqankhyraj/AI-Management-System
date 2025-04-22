@@ -14,6 +14,7 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+#urls.py
 from django.contrib import admin
 from django.urls import path
 from home.views import *
@@ -21,6 +22,10 @@ from home.tasks import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', task_list, name='task_list'),
     path("trello-webhook/", trello_webhook, name="trello_webhook"),
+    path('', task_list, name='task_list'),
+    path('assign-task/', assign_trello_task, name='assign_trello_task'),
+    path('assign-task/<str:card_id>/', assign_trello_task, name='assign_trello_task'),
+    path('delete-task/<str:card_id>/', delete_trello_task, name='delete_trello_task'),
+
 ]
