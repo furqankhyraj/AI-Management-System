@@ -28,6 +28,8 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'muhammad.mehdi@douzetech.com'  # Generic HR or system email
 EMAIL_HOST_PASSWORD = 'Karachi@123'
 
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 TRELLO_API_KEY = os.getenv("TRELLO_API_KEY")
 TRELLO_API_TOKEN = os.getenv("TRELLO_API_TOKEN")

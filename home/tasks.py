@@ -16,8 +16,6 @@ logger = logging.getLogger(__name__)
 
 
 
-
-
 def parse_trello_datetime(due_str):
     if due_str:
         dt = parse_datetime(due_str)
