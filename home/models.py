@@ -87,3 +87,11 @@ class TrelloMember(models.Model):
             trello_member_id=self.trello_member_id,
             score_counted=True
         ).values_list('id', flat=True)
+    
+class detail_of_everyday(models.Model):
+    date = models.DateField()
+    description = models.TextField()
+
+
+    def __str__(self):
+        return f"Details for {self.date}"

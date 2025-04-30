@@ -5,7 +5,7 @@ import requests
 from django.core.mail import send_mail
 from django.utils import timezone
 from django.conf import settings
-from .models import Task, TrelloMember
+from .models import Task, TrelloMember, detail_of_everyday
 from django.contrib.auth.models import User
 from django.utils.dateparse import parse_datetime
 import logging
@@ -130,6 +130,7 @@ def sync_trello_tasks():
     if response.status_code == 200:
         trello_cards = response.json()
         trello_card_ids = {card["id"] for card in trello_cards}
+        
 
         for card in trello_cards:
             task, created = Task.objects.get_or_create(trello_card_id=card['id'], defaults={
@@ -277,6 +278,7 @@ def after_deadline_():
                     [email],
                     fail_silently=False,
                 )
+            
             except TrelloMember.DoesNotExist:
                 logger.error(f"No email found for trello_member_id: {task.trello_member_id}")
                 # Handle case where the member's email is not registered
@@ -407,6 +409,14 @@ def summarize_yesterday_and_email_boss():
         )
 
         summary = gpt_response.choices[0].message.content.strip()
+
+        tasks, created = detail_of_everyday.objects.get_or_create(
+            date=(timezone.now() - timezone.timedelta(days=1)).date(),
+            defaults={"description": summary}
+        )
+
+
+
     except Exception as e:
         logger.error(f"Failed to generate summary with GPT: {e}")
         return

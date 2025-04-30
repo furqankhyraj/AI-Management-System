@@ -27,5 +27,12 @@ urlpatterns = [
     path('assign-task/', assign_trello_task, name='assign_trello_task'),
     path('assign-task/<str:card_id>/', assign_trello_task, name='assign_trello_task'),
     path('delete-task/<str:card_id>/', delete_trello_task, name='delete_trello_task'),
+    path('api/members/', members_list_api, name='members_list_api'),
+    path('assign-trello-task/', assign_trello_task, name='assign_trello_task'),
+    path('api/tasks/', task_list_api, name='task_list_api'),
+    path('api/tasks/delete/<str:card_id>/', delete_trello_task_api, name='delete_trello_task_api'),
+    path('api/tasks/<str:card_id>/', get_task_by_card_id, name='get_task_by_card_id'),
+    path('api/tasks/update/<str:card_id>/', update_task, name='update_task'),
+    path('chatbot_api/', chatbot_api, name='chatbot_api'),
 
 ]

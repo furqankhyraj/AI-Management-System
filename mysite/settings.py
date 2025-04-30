@@ -48,7 +48,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
-    "34b3-202-59-12-195.ngrok-free.app"  # Add your current Ngrok URL
+    "d09f-202-59-13-142.ngrok-free.app"  # Add your current Ngrok URL
 ]
 
 
@@ -74,9 +74,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'home',
     'background_task',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -152,6 +155,11 @@ TIME_ZONE = 'Asia/Karachi'
 USE_I18N = True
 
 USE_TZ = True
+
+CORS_ALLOW_CREDENTIALS = True
+# Allow requests from any origin (for development only)
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 
 
