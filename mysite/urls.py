@@ -22,6 +22,8 @@ from home.tasks import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('login_view/', login_view, name='login_view'),
+    path('logout_view/', logout_view, name='logout_view'),
     path("trello-webhook/", trello_webhook, name="trello_webhook"),
     path('', task_list, name='task_list'),
     path('assign-task/', assign_trello_task, name='assign_trello_task'),
@@ -34,5 +36,7 @@ urlpatterns = [
     path('api/tasks/<str:card_id>/', get_task_by_card_id, name='get_task_by_card_id'),
     path('api/tasks/update/<str:card_id>/', update_task, name='update_task'),
     path('chatbot_api/', chatbot_api, name='chatbot_api'),
+    
+
 
 ]

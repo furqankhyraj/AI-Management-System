@@ -60,6 +60,9 @@ ALLOWED_HOSTS = [
 # Additional dependencies
 # Make sure you have mysqlclient installed
 # pip install mysqlclient
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',  # This allows requests from your Next.js app
+]
 
 
 

@@ -5,23 +5,21 @@ from django.utils import timezone
 from datetime import timedelta
 from background_task.models import Task as BgTask
 from .tasks import create_trello_webhook, sync_trello_tasks, check_tasks, assigned_task, task_completion, after_deadline, summarize_yesterday_and_email_boss
-from .models import Task, detail_of_everyday
+from .models import Task, detail_of_everyday, Boss
 import requests
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.http import require_POST, require_GET
 from django.conf import settings
 import logging
+import secrets
+
 import json
 from openai import OpenAI
 
 # Schedule it to run every day at 8 AM
 from django.utils.timezone import now
 
-from django.utils.dateparse import parse_datetime
-
-
 from django.shortcuts import render, redirect
-from .forms import TrelloTaskForm
 from .trello_utils import get_board_members, create_or_update_card, delete_card
 
 
@@ -36,6 +34,7 @@ def members_list_api(request):
     members_list = [{'id': m['id'], 'fullName': m['fullName']} for m in members]
     return JsonResponse({'members': members_list})
 
+
 def task_list(request):
     tasks = Task.objects.all()
     return render(request, 'task_list.html', {'tasks': tasks})
@@ -43,7 +42,6 @@ def task_list(request):
 def task_list_api(request):
     tasks = Task.objects.all().values('title', 'deadline', 'trello_card_id')
     return JsonResponse({'tasks': list(tasks)})
-
 
 @csrf_exempt
 @require_POST
@@ -56,8 +54,8 @@ def chatbot_api(request):
             return JsonResponse({'error': 'Question not provided.'}, status=400)
 
         # Fetch tasks and summaries
-        tasks = list(Task.objects.all().values('title', 'deadline', 'trello_card_id'))[:10]
-        summaries = list(detail_of_everyday.objects.all().values_list('description', flat=True))[:7]
+        tasks = list(Task.objects.all().values('title', 'deadline', 'trello_card_id'))[-10:]
+        summaries = list(detail_of_everyday.objects.all().values_list('description', flat=True))[-7:]
 
         # Prepare system content
         system_context = (
@@ -86,6 +84,35 @@ def get_summary_after_seven():
     return list(detail_of_everyday.objects.all().values_list('description', flat=True))[:7]
 
 '''
+
+@csrf_exempt
+@require_POST
+def login_view(request):
+    data = json.loads(request.body)
+    username = data.get('username')
+    password = data.get('password')
+
+    # Find the Boss instance by username
+    try:
+        boss = Boss.objects.get(username=username)
+    except Boss.DoesNotExist:
+        return JsonResponse({"error": "Invalid credentials"}, status=401)
+
+    # Check if the password is correct
+    if boss.check_password(password):  # Check using the check_password method
+        token = secrets.token_urlsafe(32)
+        response = JsonResponse({"message": "Login successful"})
+        response.set_cookie("session_token", token, httponly=True)
+        return response
+    else:
+        return JsonResponse({"error": "Invalid credentials"}, status=401)
+
+@require_GET
+def logout_view(request):
+    response = JsonResponse({"message": "Logged out"})
+    response.delete_cookie("session_token", path='/')
+    return response
+
 
 @csrf_exempt
 def delete_trello_task_api(request, card_id):
@@ -183,8 +210,6 @@ if not BgTask.objects.filter(task_name="home.tasks.check_tasks").exists():
 if not BgTask.objects.filter(task_name="home.tasks.after_deadline").exists():
     logger.info("Scheduling after_deadline(): for every 60 seconds")
     after_deadline(schedule=90, repeat=90)
-
-
 
 
 # Helper to fetch one card
