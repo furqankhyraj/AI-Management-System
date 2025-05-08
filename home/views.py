@@ -4,7 +4,7 @@ from django.http import JsonResponse, Http404
 from django.utils import timezone
 from datetime import timedelta
 from background_task.models import Task as BgTask
-from .tasks import create_trello_webhook, sync_trello_tasks, check_tasks, assigned_task, task_completion, after_deadline, summarize_yesterday_and_email_boss
+from .tasks import create_trello_webhook, sync_trello_tasks, check_tasks, assigned_task, task_completion, after_deadline, summarize_yesterday_
 from .models import Task, detail_of_everyday, Boss
 import requests
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
@@ -40,7 +40,7 @@ def task_list(request):
     return render(request, 'task_list.html', {'tasks': tasks})
 
 def task_list_api(request):
-    tasks = Task.objects.all().values('title', 'deadline', 'trello_card_id')
+    tasks = Task.objects.all().values('title', 'deadline', 'trello_card_id', 'completed')
     return JsonResponse({'tasks': list(tasks)})
 
 @csrf_exempt
@@ -59,7 +59,7 @@ def chatbot_api(request):
 
         # Prepare system content
         system_context = (
-            f"Here are some details of tasks:\n{json.dumps(tasks, indent=2)}\n\n"
+            f"Here are some details of tasks:\n{json.dumps(tasks, indent=2, default=str)}\n\n"
             f"And here are recent summaries:\n{json.dumps(summaries, indent=2)}"
         )
 
@@ -130,7 +130,7 @@ def get_task_by_card_id(request, card_id):
         task = Task.objects.get(trello_card_id=card_id)
         return JsonResponse({
             'title': task.title,
-            'deadline': task.deadline.isoformat(),
+            'deadline': task.deadline.isoformat() if task.deadline else None,
             'trello_card_id': task.trello_card_id
         })
     except Task.DoesNotExist:
@@ -187,29 +187,23 @@ def trello_webhook(request):
 
 
 
-run_time = (now() + timedelta(days=1)).replace(hour=8, minute=0, second=0, microsecond=0)
-
-if not BgTask.objects.filter(task_name="home.tasks.summarize_yesterday_and_email_boss").exists():
-    logger.info("Scheduling summarize_yesterday_and_email_boss: at every 8th hour")
-    logger.info("....")
-    logger.info("....")
-    logger.info("....")
-    logger.info("....")
-    logger.info(run_time)
-    
-    summarize_yesterday_and_email_boss(schedule=run_time, repeat=24*60*60) 
+# run_time = (now() + timedelta(days=1)).replace(hour=12, minute=38, second=0, microsecond=0)
 
 
 
-# Schedule `check_tasks()` only if not already running
-if not BgTask.objects.filter(task_name="home.tasks.check_tasks").exists():
-    logger.info("Scheduling check_tasks(): for every 60 seconds")
-    check_tasks(schedule=60, repeat=60)
+# summarize_yesterday_(schedule=10, repeat=24*60*60)
 
 
-if not BgTask.objects.filter(task_name="home.tasks.after_deadline").exists():
-    logger.info("Scheduling after_deadline(): for every 60 seconds")
-    after_deadline(schedule=90, repeat=90)
+
+# # Schedule `check_tasks()` only if not already running
+# if not BgTask.objects.filter(task_name="home.tasks.check_tasks").exists():
+#     logger.info("Scheduling check_tasks(): for every 60 seconds")
+#     check_tasks(schedule=0, repeat=60)
+
+
+# if not BgTask.objects.filter(task_name="home.tasks.after_deadline").exists():
+#     logger.info("Scheduling after_deadline(): for every 60 seconds")
+#     after_deadline(schedule=90, repeat=90)
 
 
 # Helper to fetch one card
@@ -234,14 +228,15 @@ def assign_trello_task(request, card_id=None):
             description = data.get('description')
             members = data.get('members', [])
             deadline = data.get('deadline')
+            completed = data.get('completed', False)  # ✅ NEW
 
-            # Save to Trello
             card = create_or_update_card(
                 card_id=card_id,
                 name=title,
                 desc=description,
                 due=deadline,
-                member_ids=members
+                member_ids=members,
+                completed=completed  # ✅ NEW
             )
 
 

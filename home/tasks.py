@@ -15,14 +15,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-
 def parse_trello_datetime(due_str):
     if due_str:
         dt = parse_datetime(due_str)
         if dt:
             return timezone.make_aware(dt) if timezone.is_naive(dt) else dt
     return None
-
 
 
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -221,7 +219,7 @@ def check_tasks_():
         if task.trello_member_id:
             try:
                 trello_member = TrelloMember.objects.get(trello_member_id=task.trello_member_id)
-                email = 'muhammad.mehdi@douzetech.com'
+                email = trello_member.email
                 
                 # Send email to the member
                 employee_email_content = generate_email_content(task, 'boss', is_boss=False)
@@ -242,7 +240,7 @@ def check_tasks_():
                 f'Employee Task Overdue: {task.title}',
                 boss_email_content,
                 settings.EMAIL_HOST_USER,
-                ['muhdmehdi89@gmail.com'],  # You can replace this with the actual boss's email
+                ['furqanpersonal@gmail.com'],  # You can replace this with the actual boss's email
                 fail_silently=False,
             )
             task.email_sent = True
@@ -267,7 +265,7 @@ def after_deadline_():
         if task.trello_member_id:
             try:
                 trello_member = TrelloMember.objects.get(trello_member_id=task.trello_member_id)
-                email = 'muhammad.mehdi@douzetech.com'
+                email = trello_member.email
                 
                 # Send email to the member
                 employee_email_content = generate_email_content_4(task, 'boss', is_boss=False)
@@ -289,7 +287,7 @@ def after_deadline_():
                 f'Employee Task Overdue: {task.title}',
                 boss_email_content,
                 settings.EMAIL_HOST_USER,
-                ['muhdmehdi89@gmail.com'],  # You can replace this with the actual boss's email
+                ['furqanpersonal@gmail.com'],  # You can replace this with the actual boss's email
                 fail_silently=False,
             )
             logger.info(f"Mail sent")
@@ -304,7 +302,7 @@ def assigned_task():
         if task.trello_member_id:
             try:
                 trello_member = TrelloMember.objects.get(trello_member_id=task.trello_member_id)
-                email = 'muhammad.mehdi@douzetech.com'
+                email = trello_member.email
                 
                 # Send email to the member
                 employee_email_content = generate_email_content_2(task, 'boss', is_boss=False)
@@ -325,15 +323,12 @@ def assigned_task():
                 f'Task assigned to employee : {task.title}',
                 boss_email_content,
                 settings.EMAIL_HOST_USER,
-                ['muhdmehdi89@gmail.com'],  # You can replace this with the actual boss's email
+                ['furqanpersonal@gmail.com'],  # You can replace this with the actual boss's email
                 fail_silently=False,
             )
             task.email_sent_2 = True
             task.save()
             logger.info(f"Marked email_sent=True for task: {task.title}")
-
-
-
 
 
 def task_completion():
@@ -347,7 +342,7 @@ def task_completion():
                 f'Task is completed : {task.title}',
                 boss_email_content,
                 settings.EMAIL_HOST_USER,
-                ['muhdmehdi89@gmail.com'],  # You can replace this with the actual boss's email
+                ['furqanpersonal@gmail.com'],  # You can replace this with the actual boss's email
                 fail_silently=False,
             )
             task.email_sent_3= True
@@ -379,7 +374,6 @@ def after_deadline():
 
 
 
-@background(schedule=60)
 def summarize_yesterday_and_email_boss():
     logger.info("Running summarize_yesterday_and_email_boss...")
 
@@ -391,6 +385,7 @@ def summarize_yesterday_and_email_boss():
         response = requests.get(api_url)
         response.raise_for_status()
         updates = response.json()
+        logger.info(f"Fetched updates for {yesterday}: {updates}")
     except Exception as e:
         logger.error(f"Failed to fetch update data: {e}")
         return
@@ -405,7 +400,7 @@ def summarize_yesterday_and_email_boss():
                 {"role": "system", "content": "You are a helpful assistant who summarizes daily work for a boss."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=400
+            max_tokens=250
         )
 
         summary = gpt_response.choices[0].message.content.strip()
@@ -427,7 +422,7 @@ def summarize_yesterday_and_email_boss():
             subject=f"Daily Work Summary for {yesterday}",
             message=summary,
             from_email=settings.EMAIL_HOST_USER,
-            recipient_list=['muhdmehdi89@gmail.com'],  # replace if needed
+            recipient_list=['furqanpersonal@gmail.com'],  # replace if needed
             fail_silently=False,
         )
         logger.info("Successfully sent daily summary to the boss.")
@@ -436,4 +431,8 @@ def summarize_yesterday_and_email_boss():
 
 
 
+@background(schedule=60)
+def summarize_yesterday_():
+    logger.info("Scheduling summarize_yesterday_and_email_boss...")
+    summarize_yesterday_and_email_boss()
 

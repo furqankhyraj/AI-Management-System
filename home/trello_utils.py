@@ -16,7 +16,9 @@ def get_board_members():
     response = requests.get(url, params=params)
     return response.json()
 
-def create_or_update_card(card_id=None, name='', desc='', due=None, member_ids=[]):
+DONE_LIST_ID = '67d0065d01438695cdc2430c'  # ✅ Replace with your real Done list ID
+
+def create_or_update_card(card_id=None, name='', desc='', due=None, member_ids=[], completed=False):  # ✅ updated
     if card_id:
         url = f"{TRELLO_API_BASE}/cards/{card_id}"
         method = requests.put
@@ -24,19 +26,23 @@ def create_or_update_card(card_id=None, name='', desc='', due=None, member_ids=[
         url = f"{TRELLO_API_BASE}/cards"
         method = requests.post
 
+    list_id = DONE_LIST_ID if completed else LIST_ID  # ✅ NEW conditional logic
+
     data = {
         'key': API_KEY,
         'token': TOKEN,
         'name': name,
         'desc': desc,
-        'due': due,
         'idMembers': ','.join(member_ids),
-        'idList': LIST_ID,  # ✅ Now a real ID
+        'idList': list_id,
     }
+
+    # ✅ Only include 'due' if not None or empty
+    if due:
+        data['due'] = due
 
     response = method(url, data=data)
 
-    # 🧪 Logging
     print("Status Code:", response.status_code)
     print("Response Text:", response.text)
 
@@ -44,7 +50,7 @@ def create_or_update_card(card_id=None, name='', desc='', due=None, member_ids=[
         return response.json()
     except Exception as e:
         raise Exception(f"Trello API returned non-JSON: {response.text}")
-    
+
 
 def delete_card(card_id):
     url = f"{TRELLO_API_BASE}/cards/{card_id}"
