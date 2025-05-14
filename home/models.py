@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
+from django.db import transaction
 
 class Task(models.Model):
     title = models.CharField(max_length=255)
@@ -18,8 +19,11 @@ class Task(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     score_counted = models.BooleanField(default=False)
+    manual_score_override = models.FloatField(null=True, blank=True)  # NEW
 
     def get_delay_score(self):
+        if self.manual_score_override is not None:
+            return self.manual_score_override
         if not self.completed or not self.completed_on or not self.deadline:
             return None
 
@@ -29,18 +33,37 @@ class Task(models.Model):
         days_late = (self.completed_on - self.deadline.date()).days
         return max(0, 10 - (days_late * 0.5))
     def update_score_if_needed(self):
-        if self.completed and self.completed_on and not self.score_counted and self.trello_member_id:
+        if self.trello_member_id:
             try:
                 member = TrelloMember.objects.get(trello_member_id=self.trello_member_id)
-                member.update_score_with_new_tasks()
+                # ✅ Always allow scoring if manual override is given and not counted yet
+                if not self.score_counted or (self.manual_score_override is not None):
+                    member.update_score_for_single_task(self)
             except TrelloMember.DoesNotExist:
                 pass
 
+
+
     def save(self, *args, **kwargs):
+        previous_manual_override = None
+        previous_score_counted = False
+
+        if self.pk:
+            previous_task = Task.objects.get(pk=self.pk)
+            previous_manual_override = previous_task.manual_score_override
+            previous_score_counted = previous_task.score_counted
+
         is_being_completed = self.completed and self.completed_on and not self.score_counted
-        super().save(*args, **kwargs)  # Save the Task first
-        if is_being_completed:
+        override_changed = self.manual_score_override is not None and (
+            self.manual_score_override != previous_manual_override or not previous_score_counted
+        )
+
+        super().save(*args, **kwargs)
+
+        if is_being_completed or override_changed:
             self.update_score_if_needed()
+
+
 
 
 class TrelloMember(models.Model):
@@ -50,37 +73,28 @@ class TrelloMember(models.Model):
     historical_score = models.FloatField(null=True, blank=True)  # allow None
     total_tasks_counted = models.PositiveIntegerField(default=0)
 
-    def update_score_with_new_tasks(self):
-        new_tasks = Task.objects.filter(
-            trello_member_id=self.trello_member_id,
-            completed=True
-        ).exclude(id__in=self.get_task_ids_already_counted())
 
-        if not new_tasks.exists():
+
+    def update_score_for_single_task(self, task):
+        score = task.get_delay_score()
+        if score is None:
             return
 
-        new_score_total = sum(task.get_delay_score() for task in new_tasks)
-        new_task_count = new_tasks.count()
+        with transaction.atomic():
+            if self.historical_score is None:
+                self.historical_score = score
+                self.total_tasks_counted = 1
+            else:
+                combined_total_score = (self.historical_score * self.total_tasks_counted) + score
+                self.total_tasks_counted += 1
+                self.historical_score = round(combined_total_score / self.total_tasks_counted, 2)
 
-        if new_task_count == 0:
-            return
+            self.save()
 
-        if self.historical_score is None:
-            # First time scoring
-            self.historical_score = round(new_score_total / new_task_count, 2)
-            self.total_tasks_counted = new_task_count
-        else:
-            # Update running average
-            combined_total_score = (self.historical_score * self.total_tasks_counted) + new_score_total
-            combined_total_tasks = self.total_tasks_counted + new_task_count
-            self.historical_score = round(combined_total_score / combined_total_tasks, 2)
-            self.total_tasks_counted = combined_total_tasks
+            # Avoid triggering update_score_if_needed again
+            Task.objects.filter(pk=task.pk).update(score_counted=True)
 
-        self.save()
 
-        for task in new_tasks:
-            task.score_counted = True
-            task.save()
 
 
     def get_task_ids_already_counted(self):

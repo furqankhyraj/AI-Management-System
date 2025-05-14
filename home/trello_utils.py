@@ -8,7 +8,7 @@ BOARD_ID = settings.TRELLO_BOARD_ID
 API_KEY = settings.TRELLO_API_KEY
 TOKEN = settings.TRELLO_API_TOKEN
 LIST_ID = '67d0065d01438695cdc2430a'
-  
+
 
 def get_board_members():
     url = f'{TRELLO_API_BASE}/boards/{BOARD_ID}/members'
@@ -62,4 +62,3 @@ def delete_card(card_id):
     print("Delete Response:", response.text)
 
     return response.status_code == 200
-

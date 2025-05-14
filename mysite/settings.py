@@ -47,8 +47,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "127.0.0.1",
+    "192.168.0.117",
     "localhost",
-    "d09f-202-59-13-142.ngrok-free.app"  # Add your current Ngrok URL
+    "8d35-202-59-13-159.ngrok-free.app",  # Add your current Ngrok URL
 ]
 
 
@@ -61,7 +62,7 @@ ALLOWED_HOSTS = [
 # Make sure you have mysqlclient installed
 # pip install mysqlclient
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',  # This allows requests from your Next.js app
+    'http://localhost:3000', # This allows requests from your Next.js app
 ]
 
 

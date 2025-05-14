@@ -10,20 +10,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Boss',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('username', models.CharField(max_length=150, unique=True)),
-                ('password', models.CharField(max_length=128)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='detail_of_everyday',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('date', models.DateField()),
-                ('description', models.TextField()),
-            ],
-        ),
     ]
